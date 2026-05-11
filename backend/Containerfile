@@ -1,0 +1,24 @@
+# Base
+FROM docker.io/oven/bun:1.3 AS base
+WORKDIR /app
+COPY package*.json bun.lock ./
+
+# Development
+FROM base AS development
+RUN bun install
+COPY . .
+CMD ["bun", "dev", "--host"]
+
+# Build (Intermediate)
+FROM base AS build-step
+RUN bun install --frozen-lockfile
+COPY . .
+RUN bun run build
+
+# STAGE 4: Production
+FROM base AS production
+ENV NODE_ENV=production
+COPY --from=build-step /app/.next ./.next
+COPY --from=build-step /app/public ./public
+COPY --from=build-step /app/node_modules ./node_modules
+CMD ["bun", "run", "start"]
