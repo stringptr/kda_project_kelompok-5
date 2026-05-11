@@ -6,43 +6,41 @@ services:
       .env
     command: /garage server --single-node --default-bucket
 
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     target: development
-  #     dockerfile: Containerfile
-  #   restart: unless-stopped
-  #   develop:
-  #     watch:
-  #       - action: rebuild
-  #         path: /app/package.json
-  #   volumes:
-  #     - ./frontend/:/app:z
-  #     - bun_cache:/root/.bun/install/cache:z
-  #     - node_modules:/app/node_modules:z
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=development
+  backend:
+    build:
+      context: ./backend
+      target: development
+      dockerfile: Containerfile
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: rebuild
+          path: /app/package.json
+    volumes:
+      - ./backend:/app:z
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     target: development
-  #     dockerfile: Containerfile
-  #   restart: unless-stopped
-  #   develop:
-  #     watch:
-  #       - action: rebuild
-  #         path: /app/package.json
-  #   volumes:
-  #     - ./frontend/:/app:z
-  #     - bun_cache:/root/.bun/install/cache:z
-  #     - node_modules:/app/node_modules:z
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - NODE_ENV=development
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+      dockerfile: Containerfile
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: rebuild
+          path: /app/package.json
+    volumes:
+      - ./frontend:/app:z
+      - /app/node_modules
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
 
 volumes:
   bun_cache:
