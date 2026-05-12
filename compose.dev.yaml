@@ -3,8 +3,8 @@ services:
     image: docker.io/dxflrs/garage:v2.3.0
     restart: unless-stopped
     ports:
-      - 3900:3900
-      - 3903:3903
+      - ${DATALAKE_CONN_HOST_PORT:-3900}:3900
+      - ${DATALAKE_ADMIN_HOST_PORT:-3903}:3903
     env_file: .env
     command: /garage server --single-node --default-bucket
 
@@ -19,7 +19,7 @@ services:
         - action: rebuild
           path: /app/package.json
     ports:
-      - 3000:3000
+      - ${BACKEND_HOST_PORT:-3000}:3000
     volumes:
       - ./backend:/app:z
       - /app/node_modules
@@ -38,7 +38,7 @@ services:
         - action: rebuild
           path: /app/package.json
     ports:
-      - 5173:5173
+      - ${FRONTEND_HOST_PORT:-5173}:5173
     volumes:
       - ./frontend:/app:z
       - /app/node_modules
