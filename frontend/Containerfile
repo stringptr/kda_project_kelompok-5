@@ -13,7 +13,7 @@ CMD ["bun", "dev", "--host"]
 FROM base AS build-step
 RUN bun install --frozen-lockfile
 COPY . .
-RUN bun run build
+RUN bun build
 
 # STAGE 4: Production
 FROM base AS production
