@@ -1,0 +1,51 @@
+services:
+  datalake:
+    image: docker.io/dxflrs/garage:v2.3.0
+    restart: unless-stopped
+    ports:
+      - 3900:3900
+      - 3903:3903
+    env_file: .env
+    command: /garage server --single-node --default-bucket
+
+  backend:
+    build:
+      context: ./backend
+      target: production
+      dockerfile: Containerfile
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: rebuild
+          path: /app/package.json
+    ports:
+      - 3002:3000
+    volumes:
+      - ./backend:/app:z
+      - /app/node_modules
+    env_file: .env
+    environment:
+      - NODE_ENV=development
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+      dockerfile: Containerfile
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: rebuild
+          path: /app/package.json
+    ports:
+      - 5173:5173
+    volumes:
+      - ./frontend:/app:z
+      - /app/node_modules
+    env_file: .env
+    environment:
+      - NODE_ENV=development
+
+volumes:
+  bun_cache:
+  node_modules:
