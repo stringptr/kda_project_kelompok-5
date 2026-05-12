@@ -5,6 +5,13 @@ services:
     ports:
       - ${DATALAKE_CONN_HOST_PORT:-3900}:3900
       - ${DATALAKE_ADMIN_HOST_PORT:-3903}:3903
+    environment:
+      GARAGE_RPC_SECRET: "${GARAGE_RPC_SECRET-garagerpcsecretgaragerpcsecretgaragerpcsecretgaragerpcsecretgara}"
+      GARAGE_ADMIN_SECRET: "${GARAGE_ADMIN_SECRET-superadminsecret}"
+      GARAGE_ADMIN_TOKEN: "${GARAGE_ADMIN_SECRET-superadminsecret}"
+      GARAGE_DEFAULT_BUCKET: "${GARAGE_BUCKET-default}"
+      GARAGE_DEFAULT_ACCESS_KEY: "GK${GARAGE_DEFAULT_ACCESS_KEY-garagedefaultaccesskeygaragedefa}"
+      GARAGE_DEFAULT_SECRET_KEY: "${GARAGE_DEFAULT_SECRET_KEY-garagedefaultsecretkeygaragedefaultsecretkeygaragedefaultsecretk}"
     env_file: .env
     volumes:
       - ./datalake/etc/garage.toml:/etc/garage.toml:ro
