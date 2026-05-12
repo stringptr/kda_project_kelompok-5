@@ -13,12 +13,10 @@ CMD ["bun", "dev", "--host"]
 FROM base AS build-step
 RUN bun install --frozen-lockfile
 COPY . .
-RUN bun build
+RUN bun run build
 
 # STAGE 4: Production
 FROM base AS production
 ENV NODE_ENV=production
-COPY --from=build-step /app/.next ./.next
-COPY --from=build-step /app/public ./public
 COPY --from=build-step /app/node_modules ./node_modules
-CMD ["bun", "run", "start"]
+CMD ["bun", "run", "preview"]

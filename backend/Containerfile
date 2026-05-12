@@ -13,12 +13,16 @@ CMD ["bun", "dev", "--host"]
 FROM base AS build-step
 RUN bun install --frozen-lockfile
 COPY . .
-RUN bun build
+RUN bun build \
+  --compile \
+  --minify-whitespace \
+  --minify-syntax \
+  --outfile server \
+  src/index.ts
 
 # STAGE 4: Production
-FROM base AS production
+FROM gcr.io/distroless/base as production
 ENV NODE_ENV=production
-COPY --from=build-step /app/.next ./.next
-COPY --from=build-step /app/public ./public
-COPY --from=build-step /app/node_modules ./node_modules
-CMD ["bun", "run", "start"]
+COPY --from=build-step /app/server server
+CMD ["./server"]
+EXPOSE 3000
