@@ -6,6 +6,8 @@ services:
       - ${DATALAKE_CONN_HOST_PORT:-3900}:3900
       - ${DATALAKE_ADMIN_HOST_PORT:-3903}:3903
     env_file: .env
+    volumes:
+      - ./datalake/etc/garage.toml:/etc/garage.toml:ro
     command: /garage server --single-node --default-bucket
 
   backend:
