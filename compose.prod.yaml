@@ -17,6 +17,19 @@ services:
       - ./datalake/etc/garage.toml:/etc/garage.toml:ro
     command: /garage server --single-node --default-bucket
 
+  datalake-webui:
+    image: docker.io/khairul169/garage-webui:1.1.0
+    restart: unless-stopped
+    ports:
+      - ${DATALAKE_WEBUI_HOST_PORT-3090}:3909
+    environment:
+      API_BASE_URL: http://datalake:3903
+      S3_ENDPOINT_URL: http://datalake:3900
+      API_ADMIN_KEY: ${GARAGE_ADMIN_SECRET-superadminsecret}
+    env_file: .env
+    volumes:
+      - ./datalake/etc/garage.toml:/etc/garage.toml:ro
+
   backend:
     build:
       context: ./backend
