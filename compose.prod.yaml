@@ -39,7 +39,7 @@ services:
     develop:
       watch:
         - action: rebuild
-          path: /app/package.json
+          path: ./backend/package.json
     ports:
       - ${BACKEND_HOST_PORT:-3000}:3000
     volumes:
@@ -58,7 +58,7 @@ services:
     develop:
       watch:
         - action: rebuild
-          path: /app/package.json
+          path: ./frontend/package.json
     ports:
       - ${FRONTEND_HOST_PORT:-5173}:5173
     volumes:
