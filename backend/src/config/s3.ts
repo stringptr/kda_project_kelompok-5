@@ -1,32 +1,32 @@
 import { S3Client } from "@aws-sdk/client-s3";
 
 function requiredEnv(name: string): string {
-  const value = process.env[name];
+    const value = process.env[name];
 
-  if (!value || value.trim() === "") {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
+    if (!value || value.trim() === "") {
+        throw new Error(`Missing required environment variable: ${name}`);
+    }
 
-  return value;
+    return value;
 }
 
 const rawAccessKey = requiredEnv("GARAGE_DEFAULT_ACCESS_KEY");
 
 const accessKeyId = rawAccessKey.startsWith("GK")
-  ? rawAccessKey
-  : `GK${rawAccessKey}`;
+    ? rawAccessKey
+    : `GK${rawAccessKey}`;
 
 export const garageBucket =
-  process.env.GARAGE_BUCKET ||
-  process.env.GARAGE_DEFAULT_BUCKET ||
-  "default";
+    process.env.GARAGE_BUCKET ||
+    process.env.GARAGE_DEFAULT_BUCKET ||
+    "default";
 
 export const s3Client = new S3Client({
-  endpoint: requiredEnv("GARAGE_ENDPOINT"),
-  region: process.env.GARAGE_REGION || "garage",
-  credentials: {
-    accessKeyId,
-    secretAccessKey: requiredEnv("GARAGE_DEFAULT_SECRET_KEY"),
-  },
-  forcePathStyle: true,
+    endpoint: requiredEnv("GARAGE_ENDPOINT"),
+    region: process.env.GARAGE_REGION || "garage",
+    credentials: {
+        accessKeyId,
+        secretAccessKey: requiredEnv("GARAGE_DEFAULT_SECRET_KEY"),
+    },
+    forcePathStyle: true,
 });
