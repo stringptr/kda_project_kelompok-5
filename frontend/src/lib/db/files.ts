@@ -5,9 +5,8 @@ export interface FileRecord {
   original_name: string
   size: number
   total_chunks: number
-  sha256_hash: string
-  encrypted_aes_key: string
-  encrypted_rc4_key: string
+  hash_value: string
+  hash_algorithm: 'SHA-256' | 'MD5'
   uploaded_at: string
 }
 
@@ -22,9 +21,9 @@ export interface ChunkRecord {
 export async function insertFile(data: Omit<FileRecord, 'id' | 'uploaded_at'>) {
   const db = await getDb()
   db.run(
-    `INSERT INTO files (original_name, size, total_chunks, sha256_hash, encrypted_aes_key, encrypted_rc4_key)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [data.original_name, data.size, data.total_chunks, data.sha256_hash, data.encrypted_aes_key, data.encrypted_rc4_key]
+    `INSERT INTO files (original_name, size, total_chunks, hash_value, hash_algorithm)
+     VALUES (?, ?, ?, ?, ?)`,
+    [data.original_name, data.size, data.total_chunks, data.hash_value, data.hash_algorithm]
   )
   const result = db.exec(`SELECT last_insert_rowid() as id`)
   await saveDb()
