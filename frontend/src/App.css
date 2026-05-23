@@ -14,7 +14,7 @@
   --text-main: #1f2a17;
   --text-muted: #6f7568;
 
-  --danger: #9f2f18;
+  --danger: #a93119;
   --danger-soft: #fff3ed;
 }
 
@@ -22,7 +22,7 @@ body {
   margin: 0;
   font-family: Inter, system-ui, Arial, sans-serif;
   color: var(--text-main);
-  background: linear-gradient(135deg, #f7f1df 0%, #fffdf6 45%, #f4ead4 100%);
+  background: linear-gradient(135deg, #f7f2e4 0%, #fbf8ef 48%, #f2ead7 100%);
   overflow-x: hidden;
 }
 
@@ -31,37 +31,17 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at 15% 20%, rgba(36, 72, 23, 0.14), transparent 28%),
-    radial-gradient(circle at 85% 25%, rgba(49, 93, 32, 0.1), transparent 26%),
-    radial-gradient(circle at 75% 82%, rgba(36, 72, 23, 0.12), transparent 30%),
-    radial-gradient(circle at 25% 78%, rgba(190, 176, 135, 0.18), transparent 28%);
+    radial-gradient(circle at 20% 18%, rgba(36, 72, 23, 0.12), transparent 26%),
+    radial-gradient(circle at 82% 25%, rgba(49, 93, 32, 0.08), transparent 24%),
+    radial-gradient(circle at 74% 82%, rgba(36, 72, 23, 0.1), transparent 28%),
+    radial-gradient(circle at 24% 80%, rgba(190, 176, 135, 0.16), transparent 25%);
   filter: blur(10px);
   pointer-events: none;
   z-index: 0;
 }
 
 body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background:
-    repeating-radial-gradient(
-      circle at 50% 50%,
-      rgba(36, 72, 23, 0.035) 0px,
-      rgba(36, 72, 23, 0.035) 1px,
-      transparent 1px,
-      transparent 18px
-    ),
-    repeating-linear-gradient(
-      135deg,
-      rgba(36, 72, 23, 0.025) 0px,
-      rgba(36, 72, 23, 0.025) 1px,
-      transparent 1px,
-      transparent 34px
-    );
-  opacity: 0.7;
-  pointer-events: none;
-  z-index: 0;
+  content: none;
 }
 
 .page {
@@ -77,8 +57,8 @@ body::after {
 .page::before {
   content: "";
   position: absolute;
-  width: 620px;
-  height: 620px;
+  width: 760px;
+  height: 520px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -89,70 +69,102 @@ body::after {
   pointer-events: none;
 }
 
-.page::after {
-  content: "";
-  position: absolute;
-  width: 260px;
-  height: 260px;
-  right: 13%;
-  top: 16%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(49, 93, 32, 0.09), transparent 70%);
-  filter: blur(34px);
-  pointer-events: none;
-}
-
-.login-card {
+.split-card {
   position: relative;
   z-index: 2;
-  width: 100%;
-  max-width: 455px;
-  background: rgba(251, 247, 234, 0.97);
-  border: 1px solid var(--cream-border);
+  width: min(980px, 100%);
+  min-height: 580px;
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
   border-radius: 34px;
-  padding: 36px 34px;
   overflow: hidden;
+  background: rgba(251, 247, 234, 0.92);
+  border: 1px solid var(--cream-border);
   box-shadow:
-    0 34px 90px rgba(36, 72, 23, 0.22),
+    0 36px 100px rgba(36, 72, 23, 0.18),
     0 0 0 1px rgba(36, 72, 23, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-.login-card::before {
+.split-card::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 34px;
-  right: 34px;
+  left: 36px;
+  right: 36px;
   height: 7px;
   border-radius: 0 0 999px 999px;
   background: linear-gradient(90deg, #244817, #4f7b36, #244817);
+  z-index: 4;
+}
+
+.visual-panel {
+  position: relative;
+  min-height: 580px;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      rgba(251, 247, 234, 0.08),
+      rgba(36, 72, 23, 0.12)
+    ),
+    url("./assets/key-bg.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.visual-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(251, 247, 234, 0.12),
+      rgba(49, 93, 32, 0.06)
+    );
+  pointer-events: none;
+}
+
+.visual-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 25% 22%, rgba(255, 255, 255, 0.24), transparent 28%),
+    radial-gradient(circle at 70% 75%, rgba(36, 72, 23, 0.12), transparent 34%);
+  pointer-events: none;
+}
+
+.visual-glow,
+.visual-glow-one,
+.visual-glow-two,
+.visual-centerpiece,
+.visual-ring,
+.visual-icon {
+  display: none;
+}
+
+.form-panel {
+  position: relative;
+  min-height: 580px;
+  padding: 46px 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.58), transparent 36%),
+    rgba(251, 247, 234, 0.97);
 }
 
 .card-header {
   text-align: center;
   margin-bottom: 30px;
-  padding-top: 8px;
-}
-
-.logo-box {
-  width: 68px;
-  height: 68px;
-  margin: 0 auto 18px;
-  border-radius: 24px;
-  background: linear-gradient(145deg, #244817, #315d20);
-  color: var(--cream);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  box-shadow: 0 18px 34px rgba(36, 72, 23, 0.25);
 }
 
 h1 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 40px;
+  font-size: 42px;
   font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.04em;
@@ -163,8 +175,8 @@ h1 {
   margin: 12px auto 0;
   max-width: 310px;
   color: var(--text-muted);
-  line-height: 1.6;
-  font-size: 14px;
+  line-height: 1.65;
+  font-size: 15px;
 }
 
 .form {
@@ -181,7 +193,7 @@ h1 {
 
 label {
   color: var(--green-dark);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   text-align: left;
 }
@@ -219,7 +231,7 @@ button {
   font-weight: 850;
   cursor: pointer;
   margin-top: 4px;
-  box-shadow: 0 18px 34px rgba(36, 72, 23, 0.23);
+  box-shadow: 0 18px 34px rgba(36, 72, 23, 0.18);
   transition: 0.2s ease;
 }
 
@@ -316,11 +328,28 @@ button:disabled {
 .danger {
   background: var(--danger);
   color: #fff7ed;
-  box-shadow: 0 18px 34px rgba(159, 47, 24, 0.2);
+  box-shadow: 0 18px 34px rgba(169, 49, 25, 0.18);
 }
 
 .danger:hover {
-  background: #7f1d1d;
+  background: #8f2511;
+}
+
+@media (max-width: 860px) {
+  .split-card {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+  }
+
+  .visual-panel {
+    min-height: 260px;
+    background-position: center;
+  }
+
+  .form-panel {
+    min-height: auto;
+    padding: 40px 34px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -328,14 +357,21 @@ button:disabled {
     padding: 20px;
   }
 
-  .login-card {
-    padding: 28px;
+  .split-card {
     border-radius: 28px;
   }
 
-  .login-card::before {
+  .split-card::before {
     left: 28px;
     right: 28px;
+  }
+
+  .visual-panel {
+    min-height: 220px;
+  }
+
+  .form-panel {
+    padding: 34px 28px;
   }
 
   h1 {

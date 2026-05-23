@@ -1,33 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
+import { getConfig, saveConfig, type ConfigRecord } from "./lib/db/config";
 
-const STORAGE_KEY = "encryption_key_metadata";
-
-type KeyMetadata = {
-  salt: string;
-  verifier: string;
-  iterations: number;
-  encryption: string;
-  keyProtection: string;
-  integrity: string;
-  storage: string;
-  keySource: string;
-  encryptedAesKey: string;
-  encryptedRc4Key: string;
-  rsaPublicKey: JsonWebKey;
-  rsaPrivateKey: JsonWebKey;
-  createdAt: string;
-};
-
-function bytesToHex(bytes: Uint8Array) {
-  return Array.from(bytes)
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-function arrayBufferToHex(buffer: ArrayBuffer) {
-  return bytesToHex(new Uint8Array(buffer));
-}
+const STORAGE_LABEL = "SQLite / LocalDB";
+const ENCRYPTION_LABEL = "AES + RC4";
+const KEY_PROTECTION_LABEL = "RSA";
+const INTEGRITY_LABEL = "SHA-256";
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   const bytes = new Uint8Array(buffer);
@@ -40,57 +18,9 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary);
 }
 
-function isValidMetadata(data: unknown): data is KeyMetadata {
-  if (!data || typeof data !== "object") return false;
-
-  const metadata = data as Partial<KeyMetadata>;
-
-  return (
-    typeof metadata.salt === "string" &&
-    typeof metadata.verifier === "string" &&
-    typeof metadata.encryptedAesKey === "string" &&
-    typeof metadata.encryptedRc4Key === "string" &&
-    typeof metadata.encryption === "string" &&
-    typeof metadata.keyProtection === "string" &&
-    typeof metadata.integrity === "string" &&
-    typeof metadata.storage === "string" &&
-    typeof metadata.keySource === "string"
-  );
-}
-
-function saveMetadata(metadata: KeyMetadata) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(metadata));
-}
-
-function loadMetadata(): KeyMetadata | null {
-  const saved = localStorage.getItem(STORAGE_KEY);
-
-  if (!saved) return null;
-
-  try {
-    const parsed = JSON.parse(saved);
-
-    if (!isValidMetadata(parsed)) {
-      localStorage.removeItem(STORAGE_KEY);
-      return null;
-    }
-
-    return parsed;
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-    return null;
-  }
-}
-
-function deleteMetadata() {
-  localStorage.removeItem(STORAGE_KEY);
-}
-
-async function generateKeyFromPassword(password: string) {
+async function generateKeyFromPassword(password: string): Promise<ConfigRecord> {
   const encoder = new TextEncoder();
-
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iterations = 100000;
 
   const passwordKey = await crypto.subtle.importKey(
     "raw",
@@ -104,7 +34,7 @@ async function generateKeyFromPassword(password: string) {
     {
       name: "PBKDF2",
       salt,
-      iterations,
+      iterations: 100000,
       hash: "SHA-256",
     },
     passwordKey,
@@ -139,44 +69,59 @@ async function generateKeyFromPassword(password: string) {
     rc4Key
   );
 
-  const verifierBuffer = await crypto.subtle.digest(
-    "SHA-256",
-    encoder.encode(bytesToHex(aesKey) + bytesToHex(rc4Key))
+  const rsaPublicKey = await crypto.subtle.exportKey(
+    "jwk",
+    rsaKeyPair.publicKey
   );
 
-  const rsaPublicKey = await crypto.subtle.exportKey("jwk", rsaKeyPair.publicKey);
   const rsaPrivateKey = await crypto.subtle.exportKey(
     "jwk",
     rsaKeyPair.privateKey
   );
 
-  const metadata: KeyMetadata = {
-    salt: bytesToHex(salt),
-    verifier: arrayBufferToHex(verifierBuffer),
-    iterations,
-    encryption: "AES + RC4",
-    keyProtection: "RSA",
-    integrity: "SHA-256",
-    storage: "Local Storage",
-    keySource: "Password-Based",
-    encryptedAesKey: arrayBufferToBase64(encryptedAesKey),
-    encryptedRc4Key: arrayBufferToBase64(encryptedRc4Key),
-    rsaPublicKey,
-    rsaPrivateKey,
-    createdAt: new Date().toISOString(),
+  return {
+    rsa_public_key: JSON.stringify(rsaPublicKey),
+    rsa_private_key: JSON.stringify(rsaPrivateKey),
+    encrypted_aes_key: arrayBufferToBase64(encryptedAesKey),
+    encrypted_rc4_key: arrayBufferToBase64(encryptedRc4Key),
   };
-
-  saveMetadata(metadata);
-
-  return metadata;
 }
 
 function App() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [metadata, setMetadata] = useState<KeyMetadata | null>(loadMetadata);
+  const [config, setConfig] = useState<ConfigRecord | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSavedKey() {
+      try {
+        const savedConfig = await getConfig();
+
+        if (mounted) {
+          setConfig(savedConfig);
+        }
+      } catch {
+        if (mounted) {
+          setError("Gagal membaca key dari LocalDB.");
+        }
+      } finally {
+        if (mounted) {
+          setInitializing(false);
+        }
+      }
+    }
+
+    loadSavedKey();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleGenerateKey = async () => {
     setError("");
@@ -199,9 +144,11 @@ function App() {
     try {
       setLoading(true);
 
-      const result = await generateKeyFromPassword(password);
+      const generatedConfig = await generateKeyFromPassword(password);
 
-      setMetadata(result);
+      await saveConfig(generatedConfig);
+
+      setConfig(generatedConfig);
       setPassword("");
       setConfirmPassword("");
     } catch {
@@ -211,93 +158,114 @@ function App() {
     }
   };
 
-  const handleResetKey = () => {
-    deleteMetadata();
-    setMetadata(null);
+  const handleGenerateNewKey = () => {
+    setConfig(null);
     setPassword("");
     setConfirmPassword("");
     setError("");
   };
 
+  if (initializing) {
+    return (
+      <main className="page">
+        <section className="split-card">
+          <aside className="visual-panel" aria-hidden="true" />
+
+          <section className="form-panel">
+            <div className="card-header">
+              <h1>Loading</h1>
+              <p>Memuat key dari LocalDB.</p>
+            </div>
+          </section>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="page">
-      <section className="login-card">
-        {!metadata ? (
-          <>
-            <div className="card-header">
-              <div className="logo-box">🔐</div>
+      <section className="split-card">
+        <aside className="visual-panel" aria-hidden="true" />
 
-              <h1>Generate Key</h1>
-
-              <p>Buat password untuk menghasilkan kunci enkripsi file.</p>
-            </div>
-
-            <div className="form">
-              <div className="field">
-                <label>Password</label>
-                <input
-                  type="password"
-                  placeholder="Masukkan password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+        <section className="form-panel">
+          {!config ? (
+            <>
+              <div className="card-header">
+                <h1>Generate Key</h1>
+                <p>Buat password untuk menghasilkan kunci enkripsi file.</p>
               </div>
 
-              <div className="field">
-                <label>Konfirmasi Password</label>
-                <input
-                  type="password"
-                  placeholder="Ulangi password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
+              <div className="form">
+                <div className="field">
+                  <label>Password</label>
+                  <input
+                    type="password"
+                    placeholder="Masukkan password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Konfirmasi Password</label>
+                  <input
+                    type="password"
+                    placeholder="Ulangi password"
+                    value={confirmPassword}
+                    onChange={(event) =>
+                      setConfirmPassword(event.target.value)
+                    }
+                  />
+                </div>
+
+                {error && <p className="error">{error}</p>}
+
+                <button onClick={handleGenerateKey} disabled={loading}>
+                  {loading ? "Membuat Key..." : "Generate Key"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="result">
+              <div className="success-icon">✓</div>
+
+              <h2>Key Berhasil Dibuat</h2>
+
+              <p>
+                Encrypted key berhasil disimpan ke LocalDB dan siap digunakan
+                untuk proses enkripsi file.
+              </p>
+
+              <div className="metadata-box">
+                <div>
+                  <span>Storage</span>
+                  <strong>{STORAGE_LABEL}</strong>
+                </div>
+
+                <div>
+                  <span>Encryption</span>
+                  <strong>{ENCRYPTION_LABEL}</strong>
+                </div>
+
+                <div>
+                  <span>Key Protection</span>
+                  <strong>{KEY_PROTECTION_LABEL}</strong>
+                </div>
+
+                <div>
+                  <span>Integrity</span>
+                  <strong>{INTEGRITY_LABEL}</strong>
+                </div>
               </div>
 
               {error && <p className="error">{error}</p>}
 
-              <button onClick={handleGenerateKey} disabled={loading}>
-                {loading ? "Membuat Key..." : "Generate Key"}
+              <button className="danger" onClick={handleGenerateNewKey}>
+                Generate Key Baru
               </button>
             </div>
-          </>
-        ) : (
-          <div className="result">
-            <div className="success-icon">✓</div>
-
-            <h2>Key Berhasil Dibuat</h2>
-
-            <p>
-              Metadata dan encrypted key tersimpan di browser untuk proses
-              enkripsi file.
-            </p>
-
-            <div className="metadata-box">
-              <div>
-                <span>Storage</span>
-                <strong>{metadata.storage}</strong>
-              </div>
-
-              <div>
-                <span>Encryption</span>
-                <strong>{metadata.encryption}</strong>
-              </div>
-
-              <div>
-                <span>Key Protection</span>
-                <strong>{metadata.keyProtection}</strong>
-              </div>
-
-              <div>
-                <span>Integrity</span>
-                <strong>{metadata.integrity}</strong>
-              </div>
-            </div>
-
-            <button className="danger" onClick={handleResetKey}>
-              Reset Key
-            </button>
-          </div>
-        )}
+          )}
+        </section>
       </section>
     </main>
   );
