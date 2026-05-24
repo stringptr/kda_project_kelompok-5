@@ -20,7 +20,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
 
 async function generateKeyFromPassword(password: string): Promise<ConfigRecord> {
   const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
 
   const passwordKey = await crypto.subtle.importKey(
     "raw",
@@ -33,7 +32,7 @@ async function generateKeyFromPassword(password: string): Promise<ConfigRecord> 
   const derivedBits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt,
+      salt: new Uint8Array(),
       iterations: 100000,
       hash: "SHA-256",
     },
