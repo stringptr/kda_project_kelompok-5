@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllFiles, getChunksByFileId } from "../lib/db/files";
-import { fetchDownloadChunk, saveBlobAsFile } from "../lib/Download";
+import { saveBlobAsFile, decryptChunks, mergeChunks, hashFile, verifyHash } from "../lib/Download";
 import "../App.css";
 
 interface FileItem {
@@ -68,26 +68,21 @@ export default function Download() {
       setError("");
 
       const chunks = (await getChunksByFileId(file.id)) as ChunkItem[];
-
       if (!chunks || chunks.length === 0) {
         throw new Error("Chunk file tidak ditemukan di LocalDB.");
       }
 
-      const sortedChunks = [...chunks].sort(
-        (a, b) => a.chunk_index - b.chunk_index
+      const decryptedChunks = await decryptChunks(chunks)
+      const mergedFile = await mergeChunks(decryptedChunks)
+      const fileHash = await hashFile(mergedFile)
+      await verifyHash(file.id, fileHash)
+      const decryptedBlob = new Blob([mergedFile])
+
+      saveBlobAsFile(decryptedBlob, file.original_name);
+
+      setMessage(
+        `"${file.original_name}" berhasil di-download (integrity verified).`
       );
-
-      const chunkBlobs = await Promise.all(
-        sortedChunks.map((chunk) => fetchDownloadChunk(chunk.storage_key))
-      );
-
-      const mergedBlob = new Blob(chunkBlobs, {
-        type: "application/octet-stream",
-      });
-
-      saveBlobAsFile(mergedBlob, file.original_name);
-
-      setMessage(`File "${file.original_name}" berhasil di-download.`);
     } catch (err: any) {
       setError(err.message ?? "Download gagal.");
     } finally {
