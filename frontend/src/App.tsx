@@ -9,7 +9,6 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<GenerateKey />} />
-
       <Route
         path="/upload"
         element={
