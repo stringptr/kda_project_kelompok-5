@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { deriveKeysFromConfig, encryptWithKeys, decryptWithKeys } from '../src/lib/crypto'
+import { generateKeyFromPassword, deriveKeysFromConfig, encryptWithKeys, decryptWithKeys } from '../src/lib/crypto'
 
 // ===== Helpers (hanya untuk test) =====
 
@@ -9,49 +9,10 @@ function arrayBufferToHex(buffer: ArrayBuffer): string {
         .join('')
 }
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    let binary = ''
-    for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte)
-    return btoa(binary)
-}
-
 function arraysEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
     const ua = new Uint8Array(a)
     const ub = new Uint8Array(b)
     return ua.length === ub.length && ua.every((v, i) => v === ub[i])
-}
-
-// ===== Key Generation (sama persis dengan GenerateKey.tsx) =====
-
-async function generateKeyFromPassword(password: string) {
-    const encoder = new TextEncoder()
-    const passwordKey = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits'])
-
-    const derivedBits = await crypto.subtle.deriveBits(
-        { name: 'PBKDF2', salt: new Uint8Array(), iterations: 100000, hash: 'SHA-256' },
-        passwordKey,
-        512,
-    )
-
-    const derivedBytes = new Uint8Array(derivedBits)
-    const aesKeyRaw = derivedBytes.slice(0, 32)
-    const rc4KeyRaw = derivedBytes.slice(32, 64)
-
-    const rsaKeyPair = await crypto.subtle.generateKey(
-        { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
-        true,
-        ['encrypt', 'decrypt'],
-    )
-
-    const encryptedAesKey = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, rsaKeyPair.publicKey, aesKeyRaw)
-    const encryptedRc4Key = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, rsaKeyPair.publicKey, rc4KeyRaw)
-
-    return {
-        rsa_private_key: JSON.stringify(await crypto.subtle.exportKey('jwk', rsaKeyPair.privateKey)),
-        rsa_public_key: JSON.stringify(await crypto.subtle.exportKey('jwk', rsaKeyPair.publicKey)),
-        encrypted_aes_key: arrayBufferToBase64(encryptedAesKey),
-        encrypted_rc4_key: arrayBufferToBase64(encryptedRc4Key),
-    }
 }
 
 // ===== Tests =====

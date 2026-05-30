@@ -33,6 +33,54 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
   return bytes.buffer
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
+}
+
+export async function generateKeyFromPassword(password: string): Promise<{
+  rsa_public_key: string
+  rsa_private_key: string
+  encrypted_aes_key: string
+  encrypted_rc4_key: string
+}> {
+  const encoder = new TextEncoder()
+  const passwordKey = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits'])
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: new Uint8Array(), iterations: 100000, hash: 'SHA-256' },
+    passwordKey,
+    512,
+  )
+
+  const derivedBytes = new Uint8Array(derivedBits)
+  const aesKey = derivedBytes.slice(0, 32)
+  const rc4Key = derivedBytes.slice(32, 64)
+
+  const rsaKeyPair = await crypto.subtle.generateKey(
+    { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+    true,
+    ['encrypt', 'decrypt'],
+  )
+
+  const encryptedAesKey = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, rsaKeyPair.publicKey, aesKey)
+  const encryptedRc4Key = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, rsaKeyPair.publicKey, rc4Key)
+
+  const rsaPublicKey = await crypto.subtle.exportKey('jwk', rsaKeyPair.publicKey)
+  const rsaPrivateKey = await crypto.subtle.exportKey('jwk', rsaKeyPair.privateKey)
+
+  return {
+    rsa_public_key: JSON.stringify(rsaPublicKey),
+    rsa_private_key: JSON.stringify(rsaPrivateKey),
+    encrypted_aes_key: arrayBufferToBase64(encryptedAesKey),
+    encrypted_rc4_key: arrayBufferToBase64(encryptedRc4Key),
+  }
+}
+
 export async function deriveKeysFromConfig(config: {
   rsa_private_key: string
   encrypted_aes_key: string
