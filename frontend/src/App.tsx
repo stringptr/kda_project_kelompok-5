@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import GenerateKey from "./pages/GenerateKey";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Upload from "./pages/Upload";
+import Download from "./pages/Download";
 import "./App.css";
 
 export default function App() {
@@ -13,6 +14,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Upload />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/download"
+        element={
+          <ProtectedRoute>
+            <Download />
           </ProtectedRoute>
         }
       />

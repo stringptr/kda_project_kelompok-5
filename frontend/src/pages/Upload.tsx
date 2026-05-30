@@ -100,9 +100,27 @@ export default function Upload() {
           </button>
 
           <button
+            onClick={() => navigate("/download")}
+            disabled={loading}
+            style={{
+              background: "#3f6b2c",
+              color: "#fffdf5",
+              boxShadow: "0 14px 28px rgba(36, 72, 23, 0.14)",
+              border: "1px solid #3f6b2c",
+            }}
+          >
+            Lihat File Download
+          </button>
+
+          <button
             onClick={() => navigate("/")}
             disabled={loading}
-            style={{ background: "transparent", color: "var(--green-dark)", boxShadow: "none", border: "1px solid var(--cream-border)" }}
+            style={{
+              background: "transparent",
+              color: "var(--green-dark)",
+              boxShadow: "none",
+              border: "1px solid var(--cream-border)",
+            }}
           >
             ← Kembali
           </button>

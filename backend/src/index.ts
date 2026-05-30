@@ -1,9 +1,18 @@
 import { Elysia, t } from "elysia";
+import { cors } from "@elysiajs/cors";
 import { openapi, fromTypes } from "@elysia/openapi";
 import { uploadChunk } from "./services/upload";
 import { downloadChunk } from "./services/download";
 
 const app = new Elysia()
+  .use(
+    cors({
+      origin: ["http://localhost:5173"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  )
+
   .use(
     openapi({
       references: fromTypes(
@@ -68,13 +77,13 @@ const app = new Elysia()
         }
 
         const body = downloaded.bytes.buffer.slice(
-        downloaded.bytes.byteOffset,
-        downloaded.bytes.byteOffset + downloaded.bytes.byteLength
+          downloaded.bytes.byteOffset,
+          downloaded.bytes.byteOffset + downloaded.bytes.byteLength
         ) as ArrayBuffer;
 
         return new Response(body, {
-        status: 200,
-        headers,
+          status: 200,
+          headers,
         });
       } catch (err: any) {
         if (err.name === "ObjectNotFound") {
