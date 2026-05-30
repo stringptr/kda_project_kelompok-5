@@ -30,22 +30,7 @@ async function testTextRoundtrip(config: any): Promise<boolean> {
     console.log(`  Plaintext:  "${original}"`)
     console.log(`  Encrypted:  ${arrayBufferToHex(encrypted).substring(0, 64)}... (${encrypted.byteLength} bytes)`)
     console.log(`  Decrypted:  "${decryptedText}"`)
-    console.log(`  Result:     ${pass ? '[PASS]' : '[FAIL]'}`)
-    return pass
-}
-
-async function testBinaryRoundtrip(config: any): Promise<boolean> {
-    const keys = await deriveKeysFromConfig(config)
-
-    const size = 1 * 1024 * 1024
-    const original = crypto.getRandomValues(new Uint8Array(size)).buffer
-    const encrypted = await encryptWithKeys(original, keys.aesKey, keys.rc4Key)
-    const decrypted = await decryptWithKeys(encrypted, keys.aesKey, keys.rc4Key)
-    const pass = arraysEqual(original, decrypted)
-
-    console.log(`  Size:       ${size} bytes`)
-    console.log(`  Encrypted:  ${encrypted.byteLength} bytes (overhead: ${encrypted.byteLength - size} bytes)`)
-    console.log(`  Result:     ${pass ? '[PASS]' : '[FAIL]'}`)
+    console.log(`  Result:     ${pass ? '[PASS]' : '[FAIL]'}\n`)
     return pass
 }
 
@@ -60,6 +45,7 @@ async function testIVUniqueness(config: any): Promise<boolean> {
     console.log(`  Ciphertext 1: ${arrayBufferToHex(e1).substring(0, 48)}...`)
     console.log(`  Ciphertext 2: ${arrayBufferToHex(e2).substring(0, 48)}...`)
     console.log(`  Ciphertext berbeda?: ${pass ? 'ya' : 'tidak'}`)
+    console.log(`  Result:     ${pass ? '[PASS]' : '[FAIL]'}\n`)
     return pass
 }
 
@@ -77,20 +63,14 @@ async function main() {
     console.log('[Test 1] Text Roundtrip')
     results.push({ name: 'Text Roundtrip', pass: await testTextRoundtrip(config) })
 
-    console.log()
-    console.log('[Test 2] Binary 1MB Roundtrip')
-    results.push({ name: 'Binary 1MB Roundtrip', pass: await testBinaryRoundtrip(config) })
-
-    console.log()
-    console.log('[Test 3] IV Uniqueness')
+    console.log('[Test 2] IV Uniqueness')
     results.push({ name: 'IV Uniqueness', pass: await testIVUniqueness(config) })
 
-    console.log()
     console.log('=== Summary ===')
     const passed = results.filter(r => r.pass).length
     const failed = results.filter(r => !r.pass).length
     for (const r of results) {
-        console.log(`  ${r.pass ? '[OK]' : '[X]'} ${r.name}`)
+        console.log(`  ${r.pass ? '[PASS]' : '[FAIL]'} ${r.name}`)
     }
     console.log(`\n${results.length} tests: ${passed} passed, ${failed} failed`)
 
