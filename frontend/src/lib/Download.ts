@@ -1,5 +1,6 @@
 import { decrypt } from "./crypto";
 import { getAllFiles, getChunksByFileId, getFileById } from "../lib/db/files";
+import { hashArrayBuffer, type HashAlgorithm } from "./hash";
 
 const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL ?? "http://localhost:3000";
@@ -68,14 +69,15 @@ export async function mergeChunks(
 }
 
 export async function hashFile(
-  merged: Uint8Array<ArrayBufferLike>
+  merged: Uint8Array<ArrayBufferLike>,
+  algorithm: HashAlgorithm = "SHA-256"
 ): Promise<string> {
-  const hashBuffer = await crypto.subtle.digest(
-    "SHA-256",
-    merged as unknown as BufferSource
-  );
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  const exactBuffer = merged.buffer.slice(
+    merged.byteOffset,
+    merged.byteOffset + merged.byteLength
+  ) as ArrayBuffer
+
+  return hashArrayBuffer(exactBuffer, algorithm)
 }
 
 export async function verifyHash(fileId: number, computedHash: string) {

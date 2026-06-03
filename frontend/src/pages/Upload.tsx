@@ -1,7 +1,10 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadFile, type UploadProgress } from "../lib/upload";
+import type { HashAlgorithm } from "../lib/hash";
 import "../App.css";
+
+const HASH_ALGORITHM_STORAGE_KEY = "kda_hash_algorithm";
 
 export default function Upload() {
   const navigate = useNavigate();
@@ -29,7 +32,13 @@ export default function Upload() {
       setLoading(true);
       setError("");
       setSuccess(false);
-      await uploadFile(file, (p) => setProgress(p));
+      
+      const selectedHashAlgorithm =
+        (localStorage.getItem(HASH_ALGORITHM_STORAGE_KEY) as HashAlgorithm | null) ??
+        "SHA-256";
+
+      await uploadFile(file, (p) => setProgress(p), selectedHashAlgorithm);
+
       setSuccess(true);
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
