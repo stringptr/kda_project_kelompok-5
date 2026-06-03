@@ -3,11 +3,13 @@ import "../App.css";
 import { getConfig, saveConfig, type ConfigRecord } from "../lib/db/config";
 import { generateKeyFromPassword } from "../lib/crypto";
 import { useNavigate } from "react-router-dom";
+import type { HashAlgorithm } from "../lib/hash";
 
 const STORAGE_LABEL = "SQLite / LocalDB";
 const ENCRYPTION_LABEL = "AES + RC4";
 const KEY_PROTECTION_LABEL = "RSA";
-const INTEGRITY_LABEL = "SHA-256";
+const HASH_ALGORITHM_STORAGE_KEY = "kda_hash_algorithm";
+const DEFAULT_HASH_ALGORITHM: HashAlgorithm = "SHA-256";
 
 export default function GenerateKey() {
   const navigate = useNavigate();
@@ -17,6 +19,12 @@ export default function GenerateKey() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [hashAlgorithm, setHashAlgorithm] = useState<HashAlgorithm>(() => {
+    return (
+      (localStorage.getItem(HASH_ALGORITHM_STORAGE_KEY) as HashAlgorithm | null) ??
+      DEFAULT_HASH_ALGORITHM
+    );
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -69,6 +77,14 @@ export default function GenerateKey() {
     setPassword("");
     setConfirmPassword("");
     setError("");
+  };
+
+  const handleToggleHashAlgorithm = () => {
+    const nextAlgorithm: HashAlgorithm =
+      hashAlgorithm === "SHA-256" ? "MD5" : "SHA-256";
+
+    setHashAlgorithm(nextAlgorithm);
+    localStorage.setItem(HASH_ALGORITHM_STORAGE_KEY, nextAlgorithm);
   };
 
   if (initializing) {
@@ -135,7 +151,23 @@ export default function GenerateKey() {
                 <div><span>Storage</span><strong>{STORAGE_LABEL}</strong></div>
                 <div><span>Encryption</span><strong>{ENCRYPTION_LABEL}</strong></div>
                 <div><span>Key Protection</span><strong>{KEY_PROTECTION_LABEL}</strong></div>
-                <div><span>Integrity</span><strong>{INTEGRITY_LABEL}</strong></div>
+                <div>
+                  <span>Integrity</span>
+
+                  <div className="integrity-row">
+                    <strong>{hashAlgorithm}</strong>
+
+                    <button
+                      type="button"
+                      className="hash-arrow-button"
+                      onClick={handleToggleHashAlgorithm}
+                      aria-label={`Ganti hash algorithm. Saat ini ${hashAlgorithm}`}
+                      title="Klik untuk mengganti hash algorithm"
+                    >
+                      ⇄
+                    </button>
+                  </div>
+                </div>
               </div>
               {error && <p className="error">{error}</p>}
               <button className="danger" onClick={handleGenerateNewKey}>

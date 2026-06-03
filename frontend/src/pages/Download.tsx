@@ -74,7 +74,12 @@ export default function Download() {
 
       const decryptedChunks = await decryptChunks(chunks)
       const mergedFile = await mergeChunks(decryptedChunks)
-      const fileHash = await hashFile(mergedFile)
+
+      const fileHash = await hashFile(
+        mergedFile,
+        (file.hash_algorithm ?? "SHA-256") as "SHA-256" | "MD5"
+      )
+      
       await verifyHash(file.id, fileHash)
       const decryptedBlob = new Blob([mergedFile])
 
