@@ -1,5 +1,7 @@
 import { uploadChunk } from './api'
 import { insertFile, insertChunk } from './db/files'
+import { encrypt } from './crypto'
+import { hashArrayBuffer, type HashAlgorithm } from './hash'
 
 const CHUNK_SIZE = 1 * 1024 * 1024 // 1MB
 
@@ -10,45 +12,64 @@ export interface UploadProgress {
 
 export async function uploadFile(
   file: File,
-  onProgress: (progress: UploadProgress) => void
+  onProgress: (progress: UploadProgress) => void,
+  hashAlgorithm: HashAlgorithm = 'SHA-256'
 ): Promise<void> {
-  // Hitung hash SHA-256 file asli
+  // 1. Hash file asli sebelum split dan encrypt
   const fileBuffer = await file.arrayBuffer()
-  const hashBuffer = await crypto.subtle.digest('SHA-256', fileBuffer)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  const hashValue = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  const hashValue = await hashArrayBuffer(fileBuffer, hashAlgorithm)
 
-  // Split file menjadi chunks
+  // 2. Split file menjadi chunk 1MB
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
-  const storageKeys: string[] = []
+  const uploadedChunks: {
+    storageKey: string
+    size: number
+  }[] = []
 
   for (let i = 0; i < totalChunks; i++) {
     const start = i * CHUNK_SIZE
     const end = Math.min(start + CHUNK_SIZE, file.size)
     const chunk = file.slice(start, end)
 
-    onProgress({ current: i, total: totalChunks })
+    const chunkBuffer = await chunk.arrayBuffer()
 
-    const storageKey = await uploadChunk(chunk)
-    storageKeys.push(storageKey)
+    // 3. Encrypt chunk di sisi client
+    const encryptedBuffer = await encrypt(chunkBuffer)
+
+    const encryptedBlob = new Blob([encryptedBuffer], {
+      type: 'application/octet-stream',
+    })
+
+    // 4. Upload encrypted chunk ke backend/Garage
+    const storageKey = await uploadChunk(encryptedBlob)
+
+    uploadedChunks.push({
+      storageKey,
+      size: encryptedBlob.size,
+    })
+
+    onProgress({
+      current: i + 1,
+      total: totalChunks,
+    })
   }
 
-  // Simpan metadata file ke SQLite
+  // 5. Simpan metadata file ke SQLite
   const fileId = await insertFile({
     original_name: file.name,
     size: file.size,
     total_chunks: totalChunks,
     hash_value: hashValue,
-    hash_algorithm: 'SHA-256',
+    hash_algorithm: hashAlgorithm,
   })
 
-  // Simpan tiap chunk ke SQLite
-  for (let i = 0; i < totalChunks; i++) {
+  // 6. Simpan metadata chunk ke SQLite
+  for (let i = 0; i < uploadedChunks.length; i++) {
     await insertChunk({
       file_id: fileId,
       chunk_index: i,
-      storage_key: storageKeys[i],
-      size: Math.min(CHUNK_SIZE, file.size - i * CHUNK_SIZE),
+      storage_key: uploadedChunks[i].storageKey,
+      size: uploadedChunks[i].size,
     })
   }
 }
