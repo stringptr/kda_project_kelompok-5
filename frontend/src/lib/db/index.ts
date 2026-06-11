@@ -1,4 +1,5 @@
 import initSqlJs from 'sql.js'
+import sqlWasmPath from 'sql.js/dist/sql-wasm.wasm?url'
 import type { Database } from 'sql.js'
 import { SCHEMA } from './schema'
 
@@ -40,9 +41,11 @@ async function saveToIndexedDB(data: Uint8Array): Promise<void> {
 export async function getDb(): Promise<Database> {
   if (db) return db
 
-  const SQL = await initSqlJs({
-    locateFile: (file) => `/node_modules/sql.js/dist/${file}`,
-  })
+  const SQL = await initSqlJs(
+    typeof process !== 'undefined'
+      ? undefined
+      : { locateFile: () => sqlWasmPath }
+  )
 
   const saved = await loadFromIndexedDB()
   db = saved ? new SQL.Database(saved) : new SQL.Database()
