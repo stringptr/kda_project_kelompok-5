@@ -1,18 +1,9 @@
 import { decrypt } from "./crypto";
-import { getChunksByFileId, getFileById } from "../lib/db/files";
+import { getFileById } from "../lib/db/files";
 import { hashArrayBuffer, type HashAlgorithm } from "./hash";
 
 const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL ?? "http://localhost:3000";
-
-interface FileItem {
-  id: number;
-  original_name: string;
-  size: number;
-  total_chunks: number;
-  hash_algorithm?: string;
-  hash_value?: string;
-}
 
 interface ChunkItem {
   id?: number;
