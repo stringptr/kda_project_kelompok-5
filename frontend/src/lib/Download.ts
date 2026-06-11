@@ -1,5 +1,5 @@
 import { decrypt } from "./crypto";
-import { getAllFiles, getChunksByFileId, getFileById } from "../lib/db/files";
+import { getChunksByFileId, getFileById } from "../lib/db/files";
 import { hashArrayBuffer, type HashAlgorithm } from "./hash";
 
 const BACKEND_URL =
