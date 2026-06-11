@@ -7,7 +7,7 @@ import { downloadChunk } from "./services/download";
 const app = new Elysia()
   .use(
     cors({
-      origin: ["http://localhost:5173"],
+      origin: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
     })
@@ -114,8 +114,11 @@ const app = new Elysia()
     }
   )
 
-  .listen(3000);
+export default app;
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-);
+if (!process.env.NODE_ENV?.startsWith("test")) {
+  app.listen(3000);
+  console.log(
+    `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+  );
+}
