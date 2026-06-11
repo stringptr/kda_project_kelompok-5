@@ -1,5 +1,5 @@
 import { uploadChunk } from './api'
-import { insertFile, insertChunk } from './db/files'
+import { insertFileWithChunks } from './db/files'
 import { encrypt } from './crypto'
 import { hashArrayBuffer, type HashAlgorithm } from './hash'
 
@@ -54,22 +54,18 @@ export async function uploadFile(
     })
   }
 
-  // 5. Simpan metadata file ke SQLite
-  const fileId = await insertFile({
+  // 5. Simpan metadata file + chunk ke SQLite (atomic)
+  const chunksData = uploadedChunks.map((chunk, i) => ({
+    chunk_index: i,
+    storage_key: chunk.storageKey,
+    size: chunk.size,
+  }))
+
+  await insertFileWithChunks({
     original_name: file.name,
     size: file.size,
     total_chunks: totalChunks,
     hash_value: hashValue,
     hash_algorithm: hashAlgorithm,
-  })
-
-  // 6. Simpan metadata chunk ke SQLite
-  for (let i = 0; i < uploadedChunks.length; i++) {
-    await insertChunk({
-      file_id: fileId,
-      chunk_index: i,
-      storage_key: uploadedChunks[i].storageKey,
-      size: uploadedChunks[i].size,
-    })
-  }
+  }, chunksData)
 }
