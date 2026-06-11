@@ -10,11 +10,7 @@ function requiredEnv(name: string): string {
     return value;
 }
 
-const rawAccessKey = requiredEnv("GARAGE_DEFAULT_ACCESS_KEY");
-
-const accessKeyId = rawAccessKey.startsWith("GK")
-    ? rawAccessKey
-    : `GK${rawAccessKey}`;
+const accessKeyId = requiredEnv("GARAGE_DEFAULT_ACCESS_KEY");
 
 export const garageBucket =
     process.env.GARAGE_BUCKET ||
