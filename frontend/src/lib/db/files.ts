@@ -26,7 +26,6 @@ export async function insertFile(data: Omit<FileRecord, 'id' | 'uploaded_at'>) {
     [data.original_name, data.size, data.total_chunks, data.hash_value, data.hash_algorithm]
   )
   const result = db.exec(`SELECT last_insert_rowid() as id`)
-  await saveDb()
   return result[0].values[0][0] as number
 }
 
@@ -36,7 +35,37 @@ export async function insertChunk(data: Omit<ChunkRecord, 'id'>) {
     `INSERT INTO chunks (file_id, chunk_index, storage_key, size) VALUES (?, ?, ?, ?)`,
     [data.file_id, data.chunk_index, data.storage_key, data.size]
   )
-  await saveDb()
+}
+
+export async function insertFileWithChunks(
+  fileData: Omit<FileRecord, 'id' | 'uploaded_at'>,
+  chunksData: Omit<ChunkRecord, 'id' | 'file_id'>[]
+): Promise<number> {
+  const db = await getDb()
+  db.run("BEGIN")
+  try {
+    db.run(
+      `INSERT INTO files (original_name, size, total_chunks, hash_value, hash_algorithm)
+       VALUES (?, ?, ?, ?, ?)`,
+      [fileData.original_name, fileData.size, fileData.total_chunks, fileData.hash_value, fileData.hash_algorithm]
+    )
+    const result = db.exec(`SELECT last_insert_rowid() as id`)
+    const fileId = result[0].values[0][0] as number
+
+    for (const chunk of chunksData) {
+      db.run(
+        `INSERT INTO chunks (file_id, chunk_index, storage_key, size) VALUES (?, ?, ?, ?)`,
+        [fileId, chunk.chunk_index, chunk.storage_key, chunk.size]
+      )
+    }
+
+    db.run("COMMIT")
+    await saveDb()
+    return fileId
+  } catch (err) {
+    db.run("ROLLBACK")
+    throw err
+  }
 }
 
 export async function getAllFiles(): Promise<FileRecord[]> {
