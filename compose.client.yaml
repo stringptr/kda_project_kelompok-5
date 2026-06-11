@@ -1,0 +1,14 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+      dockerfile: Containerfile
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:3000}
+    restart: unless-stopped
+    ports:
+      - ${FRONTEND_HOST_PORT:-5173}:4173
+
+volumes:
+  node_modules:
