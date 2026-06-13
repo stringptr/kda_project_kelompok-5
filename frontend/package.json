@@ -11,7 +11,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:crypto": "bun run test/test-crypto.ts"
+    "test:hash:compare": "bun run src/test/test-hash-compare.ts"
   },
   "dependencies": {
     "crypto-js": "^4.2.0",

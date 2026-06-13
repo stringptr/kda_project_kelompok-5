@@ -18,18 +18,15 @@ function arrayBufferToWordArray(buffer: ArrayBuffer): CryptoJS.lib.WordArray {
   return CryptoJS.lib.WordArray.create(words, bytes.length)
 }
 
-export async function hashArrayBuffer(
+export function hashArrayBuffer(
   buffer: ArrayBuffer,
   algorithm: HashAlgorithm = 'SHA-256'
-): Promise<string> {
-  if (algorithm === 'SHA-256') {
-    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
+): string {
+  const words = arrayBufferToWordArray(buffer)
 
-    return hashArray
-      .map((byte) => byte.toString(16).padStart(2, '0'))
-      .join('')
+  if (algorithm === 'SHA-256') {
+    return CryptoJS.SHA256(words).toString(CryptoJS.enc.Hex)
   }
 
-  return CryptoJS.MD5(arrayBufferToWordArray(buffer)).toString(CryptoJS.enc.Hex)
+  return CryptoJS.MD5(words).toString(CryptoJS.enc.Hex)
 }
